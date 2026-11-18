@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LexiForge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  body { font: 15px/1.5 system-ui, sans-serif; background:#0f1115; color:#e6e6e6;
+         max-width: 760px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 18px; color:#f0a050; }
+  #log { display:flex; flex-direction:column; gap:8px; margin:16px 0; }
+  .msg { padding:10px 12px; border-radius:10px; white-space:pre-wrap; }
+  .user { background:#1d2a3a; align-self:flex-end; max-width:80%; }
+  .bot  { background:#191d24; align-self:flex-start; max-width:80%; border:1px solid #2a2f38; }
+  form { display:flex; gap:8px; position:sticky; bottom:0; padding:8px 0; background:#0f1115; }
+  input { flex:1; padding:10px; border-radius:8px; border:1px solid #333; background:#161a20; color:#eee; }
+  button { padding:10px 18px; border:0; border-radius:8px; background:#f0a050; color:#111; font-weight:600; }
+</style>
+</head>
+<body>
+<h1>LexiForge</h1>
+<div id="log"></div>
+<form id="f">
+  <input id="in" autocomplete="off" placeholder="Message the model...">
+  <button>Send</button>
+</form>
+<script>
+const log = document.getElementById('log');
+const messages = [];
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const inp = document.getElementById('in');
+  const text = inp.value.trim(); if (!text) return;
+  inp.value = '';
+  messages.push({role:'user', content:text});
+  add('user', text);
+  const bubble = add('bot', '');
+  const r = await fetch('/v1/chat/completions', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({messages, stream:true, max_tokens:512, temperature:0.7})});
+  const reader = r.body.getReader(); const dec = new TextDecoder();
+  let buf = '', reply = '';
+  while (true) {
+    const {done, value} = await reader.read(); if (done) break;
+    buf += dec.decode(value, {stream:true});
+    let i;
+    while ((i = buf.indexOf('\n\n')) >= 0) {
+      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 2);
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (data === '[DONE]') break;
+      try {
+        const d = JSON.parse(data).choices[0].delta.content;
+        if (d) { reply += d; bubble.textContent = reply; }
+      } catch {}
+    }
+  }
+  messages.push({role:'assistant', content:reply});
+};
+function add(cls, text) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls; d.textContent = text;
+  log.appendChild(d); d.scrollIntoView(); return d;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.gguf
+!tests/**/*.gguf
+winners.json
+.venv/
+build/
+dist/
+*.egg-info/

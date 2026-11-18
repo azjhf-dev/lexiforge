@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lexiforge"
+version = "0.1.0"
+description = "Open, hackable inference stack for AMD cards and Qwen models: from-scratch numpy engine, OpenAI-compatible server, fit planner, benchmark tuner"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+lexiforge = "lexiforge.__main__:main"
+
+[tool.setuptools]
+packages = ["lexiforge"]
